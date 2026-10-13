@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>TikUtils | Video Patcher</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#141b2e;--line:#29334d;--text:#f4f7ff;--muted:#aab5ce;--accent:#a3e635;--blue:#93c5fd}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#1b2945 0,#0b1020 55%);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+main{max-width:980px;margin:auto;padding:28px 16px 60px}.brand{font-weight:850;font-size:1.25rem;letter-spacing:.02em}.brand span{color:var(--accent)}header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:34px}.pill{border:1px solid #41516f;border-radius:999px;padding:5px 10px;color:var(--muted);font-size:.78rem}
+h1{font-size:clamp(2rem,6vw,3.4rem);line-height:1.05;letter-spacing:-.045em;margin:0 0 16px}h1 em{color:var(--accent);font-style:normal}.lead{color:var(--muted);max-width:660px;margin-bottom:26px}
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}.panel{background:rgba(20,27,46,.94);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 18px 50px #0002}.wide{grid-column:1/-1}label{display:block;color:#dce5f9;font-size:.9rem;margin:14px 0 6px}input,select{width:100%;background:#0b1223;color:var(--text);border:1px solid #364360;border-radius:10px;padding:11px;font:inherit}input[type=file]{padding:10px}input[type=range]{padding:0;accent-color:var(--accent)}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}button,.download{border:0;border-radius:11px;padding:11px 15px;font-weight:750;font-size:.94rem;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.primary{background:var(--accent);color:#17210b}.secondary{background:#27334d;color:var(--text)}button:disabled{opacity:.5;cursor:wait}.hint{font-size:.82rem;color:var(--muted)}.notice{border-left:3px solid var(--accent);padding:10px 13px;background:#a3e6350b;color:#d6e2f9;border-radius:0 10px 10px 0;font-size:.86rem;margin-top:16px}.status{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--blue);font-size:.9rem;margin-top:14px}.error{color:#fca5a5}.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}.stat{background:#0b1223;border:1px solid var(--line);padding:12px;border-radius:12px}.stat small{display:block;color:var(--muted)}.stat b{font-size:1.03rem;overflow-wrap:anywhere}.hidden{display:none}footer{margin-top:24px;color:var(--muted);font-size:.8rem}
+@media(max-width:700px){.layout{grid-template-columns:1fr}.wide{grid-column:auto}.panel{padding:16px}header{margin-bottom:25px}.row{gap:8px}}
+</style>
+</head>
+<body><main>
+<header><div class="brand">Tik<span>Utils</span></div><div class="pill">TERMUX · FFmpeg</div></header>
+<section><h1>Video tools.<br><em>No fake promises.</em></h1><p class="lead">Inspect video properties, remux without re-encoding, or re-encode with H.264/H.265. This interface sends the selected file to the server for processing.</p></section>
+<div class="layout">
+<section class="panel">
+<h2>01 / Select video</h2>
+<label for="video">Video file (maximum {{ max_mb }} MB)</label>
+<input id="video" type="file" accept="video/*,.mp4,.mov,.m4v,.mkv,.webm,.avi">
+<div class="hint">Supported: MP4, MOV, M4V, MKV, WEBM, AVI</div>
+<div class="buttons"><button id="analyze" class="secondary">Analyze video</button></div>
+<div id="analysis" class="hidden"></div>
+</section>
+<section class="panel">
+<h2>02 / Processing mode</h2>
+<label for="mode">Operation</label><select id="mode"><option value="remux">Remux — no video re-encoding</option><option value="optimize">Optimize — re-encode video</option></select>
+<div id="encodeOptions" class="hidden">
+<div class="row"><div><label for="codec">Video codec</label><select id="codec"><option value="h264">H.264 (compatible)</option><option value="h265">H.265 (HEVC)</option></select></div>
+<div><label for="preset">Speed preset</label><select id="preset"><option>ultrafast</option><option>superfast</option><option selected>veryfast</option><option>faster</option><option>fast</option><option>medium</option><option>slow</option></select></div></div>
+<label for="crf">Quality target: CRF <b id="crfValue">18</b></label><input id="crf" type="range" min="0" max="35" value="18">
+<div class="hint">Lower CRF usually means larger files and higher visual quality.</div>
+<label for="audio">Audio</label><select id="audio"><option value="aac">Encode to AAC 192 kbps</option><option value="copy">Copy original audio</option></select>
+</div>
+<div class="buttons"><button id="process" class="primary">Process video</button></div>
+<div id="status" class="status" role="status"></div>
+<div id="result" class="hidden"></div>
+</section>
+<section class="panel wide"><h2>What this tool does — and doesn't</h2><p>It checks the actual file's reported resolution, frame rate, codecs and approximate bitrate. Remuxing changes the container without intentionally re-encoding streams. Optimization re-encodes video and can change quality or file size.</p><div class="notice"><b>Reality check:</b> a local 4K/60 FPS file does not guarantee TikTok will serve 4K/60 FPS. TikTok can transcode uploads server-side. This tool does not bypass that process or manufacture real quality through metadata tricks.</div></section>
+</div>
+<footer>Files are uploaded to the host running this app. This starter project does not automatically delete generated outputs; host it privately or add a cleanup policy before public deployment.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let lastReport=null;
+function selected(){return $('video').files[0]||null}
+function formData(){const fd=new FormData();fd.append('video',selected());return fd}
+function esc(s){return String(s??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function reportHTML(r){return `<div class="stats">
+<div class="stat"><small>Resolution</small><b>${esc(r.width)} × ${esc(r.height)}</b></div>
+<div class="stat"><small>Frame rate</small><b>${esc(r.fps)} FPS</b></div>
+<div class="stat"><small>File size</small><b>${esc(r.size)}</b></div>
+<div class="stat"><small>Duration</small><b>${esc(r.duration)}</b></div>
+<div class="stat"><small>Video codec</small><b>${esc(r.video_codec)}</b></div>
+<div class="stat"><small>Approx. bitrate</small><b>${esc(r.bitrate)}</b></div>
+<div class="stat"><small>4K check</small><b>${r.is_4k?'Yes':'No'}</b></div>
+<div class="stat"><small>60 FPS check</small><b>${r.is_60fps?'Yes':'No'}</b></div>
+</div>`}
+async function send(url,fd){const res=await fetch(url,{method:'POST',body:fd});const data=await res.json().catch(()=>({error:'Server returned an invalid response.'}));if(!res.ok)throw new Error(data.error||`Request failed (${res.status})`);return data}
+$('mode').addEventListener('change',()=>$('encodeOptions').classList.toggle('hidden',$('mode').value!=='optimize'));
+$('crf').addEventListener('input',()=>$('crfValue').textContent=$('crf').value);
+$('analyze').addEventListener('click',async()=>{if(!selected()){ $('status').textContent='Choose a video first.';$('status').classList.add('error');return}
+$('analyze').disabled=true;$('status').classList.remove('error');$('status').textContent='Analyzing…';$('analysis').classList.add('hidden');
+try{const d=await send('/api/analyze',formData());$('analysis').innerHTML=reportHTML(d.report);$('analysis').classList.remove('hidden');$('status').textContent='Analysis complete.'}catch(e){$('status').textContent=e.message;$('status').classList.add('error')}finally{$('analyze').disabled=false}});
+$('process').addEventListener('click',async()=>{if(!selected()){$('status').textContent='Choose a video first.';$('status').classList.add('error');return}
+const fd=formData();fd.append('mode',$('mode').value);fd.append('codec',$('codec').value);fd.append('preset',$('preset').value);fd.append('crf',$('crf').value);fd.append('audio',$('audio').value);
+$('process').disabled=true;$('status').classList.remove('error');$('status').textContent='Processing on server. Keep this page open…';$('result').classList.add('hidden');
+try{const d=await send('/api/process',fd);$('result').innerHTML='<h3>Completed</h3><p>Before</p>'+reportHTML(d.input)+'<p>After</p>'+reportHTML(d.output)+`<div class="buttons"><a class="download primary" href="${esc(d.download_url)}">Download processed video</a></div><p class="hint">${esc(d.note)}</p>`;$('result').classList.remove('hidden');$('status').textContent='Processing complete.'}catch(e){$('status').textContent=e.message;$('status').classList.add('error')}finally{$('process').disabled=false}});
+</script></body></html>
